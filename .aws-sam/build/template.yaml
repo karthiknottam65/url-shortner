@@ -4,8 +4,16 @@ Description: Serverless URL Shortener API
 Globals:
   Function:
     Timeout: 5
-    MemorySize: 128
     Runtime: python3.12
+  HttpApi:
+    CorsConfiguration:
+      AllowOrigins:
+      - '*'
+      AllowHeaders:
+      - Content-Type
+      AllowMethods:
+      - POST
+      - OPTIONS
 Resources:
   UrlTable:
     Type: AWS::DynamoDB::Table

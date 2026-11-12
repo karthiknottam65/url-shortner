@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL Shortener</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 2rem; width: 100%; max-width: 520px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); }
+    h1 { font-size: 1.65rem; margin-bottom: 0.4rem; }
+    p.subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    form { display: flex; flex-direction: column; gap: 0.85rem; }
+    input[type="url"] { width: 100%; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 1rem; outline: none; }
+    input[type="url"]:focus { border-color: #38bdf8; }
+    button { padding: 0.85rem; border: none; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #7dd3fc; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .result-box { margin-top: 1.4rem; padding: 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: none; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .result-box a { color: #38bdf8; text-decoration: none; font-weight: 600; word-break: break-all; }
+    .copy-btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #334155; color: #f8fafc; flex-shrink: 0; }
+    .copy-btn:hover { background: #475569; }
+    .error { margin-top: 1rem; color: #f87171; font-size: 0.9rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Shorten Your Link</h1>
+    <p class="subtitle">Paste a long URL below to generate a fast, shareable link.</p>
+    <form id="shortenForm">
+      <input type="url" id="longUrl" placeholder="https://example.com/very/long/url/here" required />
+      <button type="submit" id="submitBtn">Shorten URL</button>
+    </form>
+    <div class="error" id="errorMsg"></div>
+    <div class="result-box" id="resultBox">
+      <a href="#" id="shortLink" target="_blank" rel="noopener noreferrer"></a>
+      <button type="button" class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+  </div>
+  <script>
+    const API_ENDPOINT = "https://octzn3wa7f.execute-api.ap-south-1.amazonaws.com/shorten";
+    const form = document.getElementById("shortenForm");
+    const longUrlInput = document.getElementById("longUrl");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultBox = document.getElementById("resultBox");
+    const shortLink = document.getElementById("shortLink");
+    const copyBtn = document.getElementById("copyBtn");
+    const errorMsg = document.getElementById("errorMsg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = "none";
+      resultBox.style.display = "none";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Shortening...";
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: longUrlInput.value.trim() }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || data.message || "Failed to shorten URL");
+
+        shortLink.href = data.short_url;
+        shortLink.textContent = data.short_url;
+        resultBox.style.display = "flex";
+        copyBtn.textContent = "Copy";
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Shorten URL";
+      }
+    });
+
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(shortLink.textContent);
+      copyBtn.textContent = "Copied!";
+    });
+  </script>
+</body>
+</html>
