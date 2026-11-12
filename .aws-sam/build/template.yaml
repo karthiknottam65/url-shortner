@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless URL Shortener API
+Globals:
+  Function:
+    Timeout: 5
+    MemorySize: 128
+    Runtime: python3.12
+Resources:
+  UrlTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: UrlShortenerTable
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: short_code
+        AttributeType: S
+      KeySchema:
+      - AttributeName: short_code
+        KeyType: HASH
+  ShortenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ShortenFunction
+      Handler: app.create_url
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UrlTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: UrlTable
+      Events:
+        ShortenApi:
+          Type: HttpApi
+          Properties:
+            Path: /shorten
+            Method: post
+    Metadata:
+      SamResourceId: ShortenFunction
+  RedirectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RedirectFunction
+      Handler: app.redirect_url
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UrlTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: UrlTable
+      Events:
+        RedirectApi:
+          Type: HttpApi
+          Properties:
+            Path: /{short_code}
+            Method: get
+    Metadata:
+      SamResourceId: RedirectFunction
+Outputs:
+  ApiEndpoint:
+    Description: Base HTTP API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com
