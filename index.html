@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>URL Shortener</title>
+  <title>URL Shortener & QR Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
@@ -21,6 +22,14 @@
     .copy-btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #334155; color: #f8fafc; flex-shrink: 0; }
     .copy-btn:hover { background: #475569; }
     .error { margin-top: 1rem; color: #f87171; font-size: 0.9rem; display: none; }
+    .qr-prompt { margin-top: 1rem; padding: 0.9rem 1rem; background: #0f172a; border: 1px dashed #475569; border-radius: 8px; display: none; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .qr-prompt span { color: #cbd5e1; font-size: 0.9rem; }
+    .qr-gen-btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #0284c7; color: #ffffff; flex-shrink: 0; }
+    .qr-gen-btn:hover { background: #0369a1; }
+    .qr-display { margin-top: 1rem; padding: 1.25rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: none; flex-direction: column; align-items: center; gap: 1rem; }
+    #qrcode { background: #ffffff; padding: 12px; border-radius: 8px; }
+    .download-btn { width: 100%; padding: 0.65rem; font-size: 0.9rem; background: #10b981; color: #0f172a; }
+    .download-btn:hover { background: #34d399; }
   </style>
 </head>
 <body>
@@ -36,9 +45,17 @@
       <a href="#" id="shortLink" target="_blank" rel="noopener noreferrer"></a>
       <button type="button" class="copy-btn" id="copyBtn">Copy</button>
     </div>
+    <div class="qr-prompt" id="qrPrompt">
+      <span>Do you want to generate a QR code for this URL?</span>
+      <button type="button" class="qr-gen-btn" id="generateQrBtn">Generate QR</button>
+    </div>
+    <div class="qr-display" id="qrDisplay">
+      <div id="qrcode"></div>
+      <button type="button" class="download-btn" id="downloadQrBtn">Download QR Code (PNG)</button>
+    </div>
   </div>
   <script>
-    const API_ENDPOINT = "https://octzn3wa7f.execute-api.ap-south-1.amazonaws.com/shorten";
+    const API_ENDPOINT = "https://ohumcd5z3f.execute-api.ap-south-1.amazonaws.com/shorten";
     const form = document.getElementById("shortenForm");
     const longUrlInput = document.getElementById("longUrl");
     const submitBtn = document.getElementById("submitBtn");
@@ -46,11 +63,20 @@
     const shortLink = document.getElementById("shortLink");
     const copyBtn = document.getElementById("copyBtn");
     const errorMsg = document.getElementById("errorMsg");
+    const qrPrompt = document.getElementById("qrPrompt");
+    const generateQrBtn = document.getElementById("generateQrBtn");
+    const qrDisplay = document.getElementById("qrDisplay");
+    const qrContainer = document.getElementById("qrcode");
+    const downloadQrBtn = document.getElementById("downloadQrBtn");
+    let currentShortUrl = "";
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorMsg.style.display = "none";
       resultBox.style.display = "none";
+      qrPrompt.style.display = "none";
+      qrDisplay.style.display = "none";
+      qrContainer.innerHTML = "";
       submitBtn.disabled = true;
       submitBtn.textContent = "Shortening...";
 
@@ -63,10 +89,12 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || data.message || "Failed to shorten URL");
 
-        shortLink.href = data.short_url;
-        shortLink.textContent = data.short_url;
+        currentShortUrl = data.short_url;
+        shortLink.href = currentShortUrl;
+        shortLink.textContent = currentShortUrl;
         resultBox.style.display = "flex";
         copyBtn.textContent = "Copy";
+        qrPrompt.style.display = "flex";
       } catch (err) {
         errorMsg.textContent = err.message;
         errorMsg.style.display = "block";
@@ -79,6 +107,32 @@
     copyBtn.addEventListener("click", () => {
       navigator.clipboard.writeText(shortLink.textContent);
       copyBtn.textContent = "Copied!";
+    });
+
+    generateQrBtn.addEventListener("click", () => {
+      if (!currentShortUrl) return;
+      qrContainer.innerHTML = "";
+      new QRCode(qrContainer, {
+        text: currentShortUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      qrPrompt.style.display = "none";
+      qrDisplay.style.display = "flex";
+    });
+
+    downloadQrBtn.addEventListener("click", () => {
+      const canvas = qrContainer.querySelector("canvas");
+      const img = qrContainer.querySelector("img");
+      const dataUrl = canvas ? canvas.toDataURL("image/png") : (img ? img.src : "");
+      if (!dataUrl) return;
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "short-url-qr.png";
+      link.click();
     });
   </script>
 </body>
