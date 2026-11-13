@@ -17,10 +17,21 @@
     button { padding: 0.85rem; border: none; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #7dd3fc; }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    /* Security Alert (Red) */
     .security-alert { margin-top: 1.25rem; padding: 1rem 1.1rem; background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-left: 4px solid #ef4444; border-radius: 8px; display: none; flex-direction: column; gap: 0.4rem; }
     .security-alert-header { display: flex; align-items: center; justify-content: space-between; color: #fca5a5; font-weight: 700; font-size: 0.98rem; }
     .security-alert p { color: #fecaca; font-size: 0.88rem; line-height: 1.45; }
-    .dismiss-btn { background: transparent; color: #fca5a5; padding: 0.15rem 0.45rem; font-size: 0.85rem; border: 1px solid rgba(252, 165, 165, 0.35); }
+    
+    /* Success Alert (Green) */
+    .success-alert { margin-top: 1.25rem; padding: 1rem 1.1rem; background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; border-left: 4px solid #10b981; border-radius: 8px; display: none; flex-direction: column; gap: 0.4rem; }
+    .success-alert-header { display: flex; align-items: center; justify-content: space-between; color: #34d399; font-weight: 700; font-size: 0.98rem; }
+    .success-alert p { color: #a7f3d0; font-size: 0.88rem; line-height: 1.45; }
+    
+    .dismiss-btn { background: transparent; padding: 0.15rem 0.45rem; font-size: 0.85rem; cursor: pointer; border-radius: 4px; }
+    .dismiss-red { color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.35); }
+    .dismiss-green { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
+    
     .result-box { margin-top: 1.4rem; padding: 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: none; align-items: center; justify-content: space-between; gap: 0.75rem; }
     .result-box a { color: #38bdf8; text-decoration: none; font-weight: 600; word-break: break-all; }
     .copy-btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #334155; color: #f8fafc; flex-shrink: 0; }
@@ -36,18 +47,30 @@
 <body>
   <div class="card">
     <h1>Shorten Your Link</h1>
-    <p class="subtitle">Drop your link here for instant Shortening and security checks</p>
+    <p class="subtitle">Paste a long URL below—scanned automatically for phishing and malware.</p>
     <form id="shortenForm">
       <input type="url" id="longUrl" placeholder="https://example.com/very/long/url/here" required />
       <button type="submit" id="submitBtn">Shorten URL</button>
     </form>
+    
+    <!-- Red Threat Alert -->
     <div class="security-alert" id="securityAlert">
       <div class="security-alert-header">
         <span id="threatTitle">Security Threat Detected</span>
-        <button type="button" class="dismiss-btn" id="dismissAlertBtn">Dismiss</button>
+        <button type="button" class="dismiss-btn dismiss-red" id="dismissAlertBtn">Dismiss</button>
       </div>
       <p id="threatMessage"></p>
     </div>
+
+    <!-- Green Success Alert -->
+    <div class="success-alert" id="successAlert">
+      <div class="success-alert-header">
+        <span>URL is Safe!</span>
+        <button type="button" class="dismiss-btn dismiss-green" id="dismissSuccessBtn">Dismiss</button>
+      </div>
+      <p>No malware or phishing detected. Your shortened URL is ready below.</p>
+    </div>
+
     <div class="error" id="errorMsg"></div>
     <div class="result-box" id="resultBox">
       <a href="#" id="shortLink" target="_blank"></a>
@@ -63,15 +86,20 @@
     </div>
   </div>
   <script>
-    const API_ENDPOINT = "https://7v41d6g2t4.execute-api.ap-south-1.amazonaws.com/shorten";
+    const API_ENDPOINT = "https://7v41d6g2t4.execute-api.ap-south-1.amazonaws.com/shorten"; // <-- PASTE YOUR ACTUAL API URL HERE (make sure it ends in /shorten)
     
     const form = document.getElementById("shortenForm");
     const longUrlInput = document.getElementById("longUrl");
     const submitBtn = document.getElementById("submitBtn");
+    
     const securityAlert = document.getElementById("securityAlert");
     const threatTitle = document.getElementById("threatTitle");
     const threatMessage = document.getElementById("threatMessage");
     const dismissAlertBtn = document.getElementById("dismissAlertBtn");
+    
+    const successAlert = document.getElementById("successAlert");
+    const dismissSuccessBtn = document.getElementById("dismissSuccessBtn");
+
     const resultBox = document.getElementById("resultBox");
     const shortLink = document.getElementById("shortLink");
     const copyBtn = document.getElementById("copyBtn");
@@ -84,11 +112,13 @@
     let currentShortUrl = "";
 
     dismissAlertBtn.addEventListener("click", () => securityAlert.style.display = "none");
+    dismissSuccessBtn.addEventListener("click", () => successAlert.style.display = "none");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorMsg.style.display = "none";
       securityAlert.style.display = "none";
+      successAlert.style.display = "none";
       resultBox.style.display = "none";
       qrPrompt.style.display = "none";
       qrDisplay.style.display = "none";
@@ -111,6 +141,9 @@
           securityAlert.style.display = "flex";
           return;
         }
+
+        // Display Green Success Banner
+        successAlert.style.display = "flex";
 
         currentShortUrl = data.short_url;
         shortLink.href = currentShortUrl;
