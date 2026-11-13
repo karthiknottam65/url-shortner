@@ -1,24 +1,35 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Serverless URL Shortener API
+Description: Serverless URL Shortener with Phishing & Malware Threat Detection
+Parameters:
+  SafeBrowsingApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Google Safe Browsing API v4 Key for real-time phishing/malware scanning
 Globals:
   Function:
-    Timeout: 5
     Runtime: python3.12
+    Timeout: 10
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLE_NAME:
+          Ref: UrlTable
   HttpApi:
     CorsConfiguration:
       AllowOrigins:
       - '*'
-      AllowHeaders:
-      - Content-Type
       AllowMethods:
+      - GET
       - POST
       - OPTIONS
+      AllowHeaders:
+      - Content-Type
 Resources:
   UrlTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: UrlShortenerTable
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: short_code
@@ -30,14 +41,14 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ShortenFunction
-      Handler: app.create_url
+      Handler: app.shorten_url
+      Environment:
+        Variables:
+          SAFE_BROWSING_API_KEY:
+            Ref: SafeBrowsingApiKey
       Policies:
       - DynamoDBCrudPolicy:
           TableName:
-            Ref: UrlTable
-      Environment:
-        Variables:
-          TABLE_NAME:
             Ref: UrlTable
       Events:
         ShortenApi:
@@ -53,12 +64,8 @@ Resources:
       CodeUri: RedirectFunction
       Handler: app.redirect_url
       Policies:
-      - DynamoDBCrudPolicy:
+      - DynamoDBReadPolicy:
           TableName:
-            Ref: UrlTable
-      Environment:
-        Variables:
-          TABLE_NAME:
             Ref: UrlTable
       Events:
         RedirectApi:
