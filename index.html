@@ -12,7 +12,7 @@
     h1 { font-size: 1.65rem; margin-bottom: 0.4rem; }
     p.subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
     form { display: flex; flex-direction: column; gap: 0.85rem; }
-    input[type="url"] { width: 100%; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 1rem; outline: none; }
+  input[type="url"], input[type="text"] { width: 100%; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; }
     input[type="url"]:focus { border-color: #38bdf8; }
     button { padding: 0.85rem; border: none; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #7dd3fc; }
@@ -49,7 +49,8 @@
     <h1>Shorten Your Link</h1>
     <p class="subtitle">Drop your link here for instant shortening and security Checks</p>
     <form id="shortenForm">
-      <input type="url" id="longUrl" placeholder="https://example.com/very/long/url/here" required />
+      <input type="url" id="longUrl" placeholder="https://example.com/long/url" required />
+      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. my-resume)" pattern="[a-zA-Z0-9-]+" title="Letters, numbers, and hyphens only" />
       <button type="submit" id="submitBtn">Shorten URL</button>
     </form>
     
@@ -90,6 +91,7 @@
     
     const form = document.getElementById("shortenForm");
     const longUrlInput = document.getElementById("longUrl");
+    const customAliasInput = document.getElementById("customAlias");
     const submitBtn = document.getElementById("submitBtn");
     
     const securityAlert = document.getElementById("securityAlert");
@@ -126,12 +128,27 @@
       submitBtn.textContent = "Scanning...";
 
       try {
+        // Build the payload
+        const payload = { url: longUrlInput.value.trim() };
+        
+        // Add custom alias to payload if the user typed one
+        if (customAliasInput.value.trim()) {
+            payload.custom_alias = customAliasInput.value.trim();
+        }
+
+        // Send to AWS
         const response = await fetch(API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: longUrlInput.value.trim() }),
+          body: JSON.stringify(payload),
         });
         const data = await response.json();
+        if (data.error) {
+          threatTitle.textContent = "Alias Unavailable";
+          threatMessage.textContent = data.error;
+          securityAlert.style.display = "flex";
+          return;
+        }
 
         if (!response.ok) throw new Error(data.error || "Failed to shorten URL");
 
