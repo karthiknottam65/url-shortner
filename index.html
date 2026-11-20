@@ -64,11 +64,14 @@
     
     </form>
 
-    <!-- Paste this right below </form> -->
-    <div id="result" class="hidden">
+   <div id="result" class="hidden">
         <p>Your short link:</p>
         <a id="shortUrl" href="#" target="_blank"></a>
         <button id="copyBtn">Copy</button>
+        
+        <!-- Added QR Code Container -->
+        <div id="qrContainer" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+        <button id="downloadQrBtn" style="margin-top: 10px;">Download QR Code</button>
     </div>
 
     <!-- The Security Alert Box -->
@@ -118,6 +121,10 @@
     const resultDiv = document.getElementById("result");
     const shortUrlDisplay = document.getElementById("shortUrl");
     const copyBtn = document.getElementById("copyBtn");
+    
+    // QR Code Variables
+    const qrContainer = document.getElementById("qrContainer");
+    const downloadQrBtn = document.getElementById("downloadQrBtn");
 
     dismissAlertBtn.addEventListener("click", () => {
         securityAlert.style.display = "none";
@@ -161,8 +168,19 @@
                 threatMessage.textContent = data.alert_message;
                 securityAlert.style.display = "flex";
             } else {
+                // 1. Show the Short URL
                 shortUrlDisplay.href = data.short_url;
                 shortUrlDisplay.textContent = data.short_url;
+                
+                // 2. Generate the QR Code
+                qrContainer.innerHTML = ""; 
+                new QRCode(qrContainer, {
+                    text: data.short_url,
+                    width: 128,
+                    height: 128
+                });
+
+                // 3. Show the entire result box
                 resultDiv.classList.remove("hidden");
             }
         } catch (err) {
@@ -181,8 +199,17 @@
         setTimeout(() => copyBtn.textContent = "Copy", 2000);
     });
 
-    // If you have a QR code function, it goes here:
-    // downloadQrBtn.addEventListener("click", () => { ... });
+    // Your original QR Download Logic
+    downloadQrBtn.addEventListener("click", () => {
+        const canvas = qrContainer.querySelector("canvas");
+        const img = qrContainer.querySelector("img");
+        const dataUrl = canvas ? canvas.toDataURL("image/png") : (img ? img.src : "");
+        if (!dataUrl) return;
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = "short-url-qr.png";
+        link.click();
+    });
 </script>
 </body>
 </html>
