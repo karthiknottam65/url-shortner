@@ -95,132 +95,87 @@
     </div>
   </div>
   <script>
-    const API_ENDPOINT = "https://2w8oxe2o29.execute-api.ap-south-1.amazonaws.com/shorten "
-    
+    const API_ENDPOINT = "https://2w8oxe2o29.execute-api.ap-south-1.amazonaws.com/shorten";
+
     const form = document.getElementById("shortenForm");
     const longUrlInput = document.getElementById("longUrl");
     const customAliasInput = document.getElementById("customAlias");
-    const submitBtn = document.getElementById("submitBtn");
     const expireSelect = document.getElementById("expireSelect");
-    
+    const submitBtn = document.getElementById("submitBtn");
+
     const securityAlert = document.getElementById("securityAlert");
     const threatTitle = document.getElementById("threatTitle");
     const threatMessage = document.getElementById("threatMessage");
     const dismissAlertBtn = document.getElementById("dismissAlertBtn");
-    
-    const successAlert = document.getElementById("successAlert");
-    const dismissSuccessBtn = document.getElementById("dismissSuccessBtn");
 
-    const resultBox = document.getElementById("resultBox");
-    const shortLink = document.getElementById("shortLink");
+    const resultDiv = document.getElementById("result");
+    const shortUrlDisplay = document.getElementById("shortUrl");
     const copyBtn = document.getElementById("copyBtn");
-    const errorMsg = document.getElementById("errorMsg");
-    const qrPrompt = document.getElementById("qrPrompt");
-    const generateQrBtn = document.getElementById("generateQrBtn");
-    const qrDisplay = document.getElementById("qrDisplay");
-    const qrContainer = document.getElementById("qrcode");
-    const downloadQrBtn = document.getElementById("downloadQrBtn");
-    let currentShortUrl = "";
 
-    dismissAlertBtn.addEventListener("click", () => securityAlert.style.display = "none");
-    dismissSuccessBtn.addEventListener("click", () => successAlert.style.display = "none");
+    dismissAlertBtn.addEventListener("click", () => {
+        securityAlert.style.display = "none";
+    });
 
     form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorMsg.style.display = "none";
-      securityAlert.style.display = "none";
-      successAlert.style.display = "none";
-      resultBox.style.display = "none";
-      qrPrompt.style.display = "none";
-      qrDisplay.style.display = "none";
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Scanning...";
-form.addEventListener("submit", async (e) => {
-        // THIS LINE MUST BE FIRST. It stops the page from refreshing.
         e.preventDefault(); 
         
-        // Hide any old results or errors before processing the new link
         securityAlert.style.display = "none";
         resultDiv.classList.add("hidden");
         submitBtn.textContent = "Shortening...";
         submitBtn.disabled = true;
 
         try {
-            // Build the payload
             const payload = { 
                 url: longUrlInput.value.trim(),
                 expiration_days: parseInt(expireSelect.value)
             };
             
-            // Add custom alias to payload if the user typed one
             if (customAliasInput.value.trim()) {
                 payload.custom_alias = customAliasInput.value.trim();
             }
 
-            // Send to AWS
             const response = await fetch(API_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (data.error) {
-          threatTitle.textContent = "Alias Unavailable";
-          threatMessage.textContent = data.error;
-          securityAlert.style.display = "flex";
-          return;
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            
+            const data = await response.json();
+
+            if (data.error) {
+                threatTitle.textContent = "Error";
+                threatMessage.textContent = data.error;
+                securityAlert.style.display = "flex";
+                return;
+            }
+
+            if (!data.safe) {
+                threatTitle.textContent = data.threat_title;
+                threatMessage.textContent = data.alert_message;
+                securityAlert.style.display = "flex";
+            } else {
+                shortUrlDisplay.href = data.short_url;
+                shortUrlDisplay.textContent = data.short_url;
+                resultDiv.classList.remove("hidden");
+            }
+        } catch (err) {
+            threatTitle.textContent = "Connection Error";
+            threatMessage.textContent = "Failed to connect to the server.";
+            securityAlert.style.display = "flex";
+        } finally {
+            submitBtn.textContent = "Shorten URL";
+            submitBtn.disabled = false;
         }
-
-        if (!response.ok) throw new Error(data.error || "Failed to shorten URL");
-
-        if (data.safe === false) {
-          threatTitle.textContent = data.threat_title || "Unsafe URL Blocked";
-          threatMessage.textContent = data.alert_message || "This link was flagged as potentially unsafe.";
-          securityAlert.style.display = "flex";
-          return;
-        }
-
-        // Display Green Success Banner
-        successAlert.style.display = "flex";
-
-        currentShortUrl = data.short_url;
-        shortLink.href = currentShortUrl;
-        shortLink.textContent = currentShortUrl;
-        resultBox.style.display = "flex";
-        copyBtn.textContent = "Copy";
-        qrPrompt.style.display = "flex";
-      } catch (err) {
-        errorMsg.textContent = err.message;
-        errorMsg.style.display = "block";
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Shorten URL";
-      }
     });
 
     copyBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(shortLink.textContent);
-      copyBtn.textContent = "Copied!";
+        navigator.clipboard.writeText(shortUrlDisplay.href);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => copyBtn.textContent = "Copy", 2000);
     });
 
-    generateQrBtn.addEventListener("click", () => {
-      if (!currentShortUrl) return;
-      qrContainer.innerHTML = "";
-      new QRCode(qrContainer, { text: currentShortUrl, width: 180, height: 180, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
-      qrPrompt.style.display = "none";
-      qrDisplay.style.display = "flex";
-    });
-
-    downloadQrBtn.addEventListener("click", () => {
-      const canvas = qrContainer.querySelector("canvas");
-      const img = qrContainer.querySelector("img");
-      const dataUrl = canvas ? canvas.toDataURL("image/png") : (img ? img.src : "");
-      if (!dataUrl) return;
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "short-url-qr.png";
-      link.click();
-    });
-  </script>
+    // If you have a QR code function, it goes here:
+    // downloadQrBtn.addEventListener("click", () => { ... });
+</script>
 </body>
 </html>
