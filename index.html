@@ -50,7 +50,7 @@
     <p class="subtitle">Drop your link here for instant shortening and security Checks</p>
    <form id="shortenForm">
       <input type="url" id="longUrl" placeholder="https://example.com/long/url" required />
-      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. my-resume)" pattern="[a-zA-Z0-9-]+" title="Letters, numbers, and hyphens only" />
+      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. my-resume)" pattern="[a-zA-Z0-9\-]+" title="Letters, numbers, and hyphens only" />
       
       <select id="expireSelect" title="Link Expiration">
         <option value="0">Never Expire</option>
@@ -62,13 +62,20 @@
       <button type="submit" id="submitBtn">Shorten URL</button>
     </form>
     
-    <!-- Red Threat Alert -->
-    <div class="security-alert" id="securityAlert">
-      <div class="security-alert-header">
-        <span id="threatTitle">Security Threat Detected</span>
-        <button type="button" class="dismiss-btn dismiss-red" id="dismissAlertBtn">Dismiss</button>
-      </div>
-      <p id="threatMessage"></p>
+    </form>
+
+    <!-- The Result Box that was missing -->
+    <div id="result" class="hidden">
+        <p>Your short link:</p>
+        <a id="shortUrl" href="#" target="_blank"></a>
+        <button id="copyBtn">Copy</button>
+    </div>
+
+    <!-- The Security Alert Box -->
+    <div id="securityAlert" style="display: none; background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 8px; margin-top: 1rem; flex-direction: column; gap: 0.5rem;">
+        <h3 id="threatTitle" style="margin: 0; font-size: 1.1rem;"></h3>
+        <p id="threatMessage" style="margin: 0; font-size: 0.9rem;"></p>
+        <button id="dismissAlertBtn" style="background: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; margin-top: 0.5rem;">Dismiss</button>
     </div>
 
     <!-- Green Success Alert -->
