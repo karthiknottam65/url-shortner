@@ -135,7 +135,9 @@
       qrDisplay.style.display = "none";
       submitBtn.disabled = true;
       submitBtn.textContent = "Scanning...";
-
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
       try {
        // Build the payload
         const payload = { 
