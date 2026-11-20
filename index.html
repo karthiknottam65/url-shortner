@@ -12,7 +12,7 @@
     h1 { font-size: 1.65rem; margin-bottom: 0.4rem; }
     p.subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
     form { display: flex; flex-direction: column; gap: 0.85rem; }
-  input[type="url"], input[type="text"] { width: 100%; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; }
+   input[type="url"], input[type="text"], select { width: 100%; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; margin-bottom: 1rem; font-family: inherit; }
     input[type="url"]:focus { border-color: #38bdf8; }
     button { padding: 0.85rem; border: none; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #7dd3fc; }
@@ -48,9 +48,17 @@
   <div class="card">
     <h1>Shorten Your Link</h1>
     <p class="subtitle">Drop your link here for instant shortening and security Checks</p>
-    <form id="shortenForm">
+   <form id="shortenForm">
       <input type="url" id="longUrl" placeholder="https://example.com/long/url" required />
-      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. myresume)" pattern="[a-zA-Z0-9-]+" title="Letters, numbers, and hyphens only" />
+      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. my-resume)" pattern="[a-zA-Z0-9-]+" title="Letters, numbers, and hyphens only" />
+      
+      <select id="expireSelect" title="Link Expiration">
+        <option value="0">Never Expire</option>
+        <option value="1">Expire in 1 Day</option>
+        <option value="7">Expire in 7 Days</option>
+        <option value="30">Expire in 30 Days</option>
+      </select>
+
       <button type="submit" id="submitBtn">Shorten URL</button>
     </form>
     
@@ -87,12 +95,13 @@
     </div>
   </div>
   <script>
-    const API_ENDPOINT = "https://2w8oxe2o29.execute-api.ap-south-1.amazonaws.com/shorten";
+    const API_ENDPOINT = "https://2w8oxe2o29.execute-api.ap-south-1.amazonaws.com/shorten 
     
     const form = document.getElementById("shortenForm");
     const longUrlInput = document.getElementById("longUrl");
     const customAliasInput = document.getElementById("customAlias");
     const submitBtn = document.getElementById("submitBtn");
+    const expireSelect = document.getElementById("expireSelect");
     
     const securityAlert = document.getElementById("securityAlert");
     const threatTitle = document.getElementById("threatTitle");
@@ -128,8 +137,11 @@
       submitBtn.textContent = "Scanning...";
 
       try {
-        // Build the payload
-        const payload = { url: longUrlInput.value.trim() };
+       // Build the payload
+        const payload = { 
+            url: longUrlInput.value.trim(),
+            expiration_days: parseInt(expireSelect.value) // <-- This sends the days to AWS
+        };
         
         // Add custom alias to payload if the user typed one
         if (customAliasInput.value.trim()) {
