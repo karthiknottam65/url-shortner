@@ -50,7 +50,7 @@
     <p class="subtitle">Drop your link here for instant shortening and security Checks</p>
    <form id="shortenForm">
       <input type="url" id="longUrl" placeholder="https://example.com/long/url" required />
-      <input type="text" id="customAlias" placeholder="Custom alias (optional, e.g. my-resume)" pattern="[a-zA-Z0-9\-]+" title="Letters, numbers, and hyphens only" />
+      <input type="text" id="customAlias" placeholder="Custom alias (optional)" pattern="[a-zA-Z0-9\-]+" />
       
       <select id="expireSelect" title="Link Expiration">
         <option value="0">Never Expire</option>
@@ -64,7 +64,7 @@
     
     </form>
 
-    <!-- The Result Box that was missing -->
+    <!-- Paste this right below </form> -->
     <div id="result" class="hidden">
         <p>Your short link:</p>
         <a id="shortUrl" href="#" target="_blank"></a>
