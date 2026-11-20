@@ -136,22 +136,29 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Scanning...";
 form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-      try {
-       // Build the payload
-        const payload = { 
-            url: longUrlInput.value.trim(),
-            expiration_days: parseInt(expireSelect.value) // <-- This sends the days to AWS
-        };
+        // THIS LINE MUST BE FIRST. It stops the page from refreshing.
+        e.preventDefault(); 
         
-        // Add custom alias to payload if the user typed one
-        if (customAliasInput.value.trim()) {
-            payload.custom_alias = customAliasInput.value.trim();
-        }
+        // Hide any old results or errors before processing the new link
+        securityAlert.style.display = "none";
+        resultDiv.classList.add("hidden");
+        submitBtn.textContent = "Shortening...";
+        submitBtn.disabled = true;
 
-        // Send to AWS
-        const response = await fetch(API_ENDPOINT, {
+        try {
+            // Build the payload
+            const payload = { 
+                url: longUrlInput.value.trim(),
+                expiration_days: parseInt(expireSelect.value)
+            };
+            
+            // Add custom alias to payload if the user typed one
+            if (customAliasInput.value.trim()) {
+                payload.custom_alias = customAliasInput.value.trim();
+            }
+
+            // Send to AWS
+            const response = await fetch(API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
